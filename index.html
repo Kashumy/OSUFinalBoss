@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html onclick="document.querySelector('html').requestFullscreen()">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Osu finnal boss</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000000;
+        }
+        canvas {
+            display: block;
+            height: 100vh;
+            width: 100vw;
+        }
+        #modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 20px;
+            color: rgba(248, 248, 248, 1);
+            background: rgba(75, 72, 72, 1);
+            border-radius: 0px;
+            text-align: center;
+            z-index: 1000;
+        }
+        #modal h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        #modal button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background: rgba(116, 115, 115, 1);
+            color: rgba(255, 255, 255, 1);
+            border: none;
+            outline: none;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="modal">
+        <h1 id="modalMessage">Start Level</h1>
+        <button id="runButton">Run</button>
+    </div>
+
+    <script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const modal = document.getElementById('modal');
+const modalMessage = document.getElementById('modalMessage');
+const runButton = document.getElementById('runButton');
+
+var map = {
+  "music": "doom.mp3",
+  "pointcolor": "rgb(255,0,0)",
+  "textcolor": "red",
+  "bgcolor": "rgb(1,3,0,1)",
+  "bgimage": " ",
+  "imagefit": "fit",
+  "points": [
+    {
+      "t": 500,
+      "s": 800,
+      "x": 10,
+      "y": 50,
+      "text": 1
+    },
+    {
+      "t": 1000,
+      "s": 800,
+      "x": 20,
+      "y": 50,
+      "text": 2
+    },
+    {
+      "t": 1500,
+      "s": 800,
+      "x": 30,
+      "y": 50,
+      "text": 3
+    },
+    {
+      "t": 2000,
+      "s": 800,
+      "x": 60,
+      "y": 50,
+      "text": 3
+    },
+    {
+      "t": 2300,
+      "s": 800,
+      "x": 50,
+      "y": 50,
+      "text": 3
+    },
+    {
+      "t": 3000,
+      "s": 800,
+      "x": 90,
+      "y": 50,
+      "text": 4
+    },
+    {
+      "t": 3300,
+      "s": 800,
+      "x": 70,
+      "y": 50,
+      "text": 4
+    },
+    {
+      "t": 3600,
+      "s": 800,
+      "x": 90,
+      "y": 50,
+      "text": 4
+    },
+    {
+      "t": 4200,
+      "s": 800,
+      "x": 50,
+      "y": 50,
+      "text": 1
+    },
+    {
+      "t": 4500,
+      "s": 800,
+      "x": 50,
+      "y": 10,
+      "text": 2
+    },
+    {
+      "t": 5000,
+      "s": 800,
+      "x": 50,
+      "y": 50,
+      "text": 3
+    },
+    {
+      "t": 5500,
+      "s": 800,
+      "x": 50,
+      "y": 10,
+      "text": 4
+    },
+    {
+      "t": 6000,
+      "s": 800,
+      "x": 50,
+      "y": 50,
+      "text": 4
+    },
+    {
+      "t": 6500,
+      "s": 800,
+      "x": 10,
+      "y": 40,
+      "text": 1
+    },
+    {
+      "t": 7000,
+      "s": 800,
+      "x": 20,
+      "y": 40,
+      "text": 2
+    },
+    {
+      "t": 7500,
+      "s": 800,
+      "x": 75,
+      "y": 40,
+      "text": 3
+    },
+    {
+      "t": 8000,
+      "s": 800,
+      "x": 90,
+      "y": 40,
+      "text": 4
+    },
+    {
+      "t": 9500,
+      "s": 800,
+      "x": 90,
+      "y": 20,
+      "text": 1
+    },
+    {
+        "t": 10000,
+        "s": 800,
+        "x": 90,
+        "y": 50,
+        "text": 1
+    },
+    {
+      "t": 10100,
+      "s": 800,
+      "x": 75,
+      "y": 20,
+      "text": 3
+    },
+    {
+      "t": 10400,
+      "s": 800,
+      "x": 75,
+      "y": 50,
+      "text": 4
+    },
+    {
+      "t": 11000,
+      "s": 800,
+      "x": 25,
+      "y": 50,
+      "text": 1
+    },
+    {
+      "t": 11300,
+      "s": 800,
+      "x": 50,
+      "y": 75,
+      "text": 1
+    },
+    {
+      "t": 12400,
+      "s": 800,
+      "x": 10,
+      "y": 90,
+      "text": 1
+    },
+    {
+      "t": 12800,
+      "s": 800,
+      "x": 10,
+      "y": 75,
+      "text": 1
+    },
+    {
+      "t": 12900,
+      "s": 800,
+      "x": 90,
+      "y": 10,
+      "text": 1
+    },
+    {
+      "t": 13200,
+      "s": 800,
+      "x": 90,
+      "y": 35,
+      "text": 1
+    },
+    {
+      "t": 14000,
+      "s": 800,
+      "x": 50,
+      "y": 50,
+      "text": 1
+    },
+    {
+      "t": 14200,
+      "s": 800,
+      "x": 75,
+      "y": 75,
+      "text": 1
+    },
+    {
+      "t": 14400,
+      "s": 800,
+      "x": 25,
+      "y": 25,
+      "text": 1
+    },
+ 
+    {
+      "t": 14800,
+      "s": 800,
+      "x": 75,
+      "y": 10,
+      "text": 1
+    },
+    {
+      "t": 15000,
+      "s": 800,
+      "x": 10,
+      "y": 10,
+      "text": 1
+    },
+ 
+    {
+      "t": 15800,
+      "s": 1000,
+      "x": 10,
+      "y": 10,
+      "text": 1
+    },
+    {
+      "t": 16300,
+      "s": 800,
+      "x": 49.44444444444444,
+      "y": 10
+    },
+    {
+      "t": 16600,
+      "s": 800,
+      "x": 51.11111111111111,
+      "y": 95.78125
+    },
+    {
+      "t": 16900,
+      "s": 800,
+      "x": 50.27777777777778,
+      "y": 49.6875
+    },
+    {
+      "t": 17300,
+      "s": 800,
+      "x": 49.166666666666664,
+      "y": 27.968749999999996
+    },
+    {
+      "t": 17650,
+      "s": 800,
+      "x": 70.55555555555556,
+      "y": 27.8125
+    },
+    {
+      "t": 18768,
+      "s": 800,
+      "x": 11.666666666666666,
+      "y": 55.46875
+    },
+    {
+      "t": 19099,
+      "s": 800,
+      "x": 11.666666666666666,
+      "y": 19.53125
+    },
+    {
+      "t": 19299,
+      "s": 800,
+      "x": 28.055555555555557,
+      "y": 19.53125
+    },
+    {
+      "t": 19599,
+      "s": 800,
+      "x": 45.27777777777778,
+      "y": 19.21875
+    },
+    {
+      "t": 19999,
+      "s": 800,
+      "x": 61.38888888888889,
+      "y": 19.375
+    },
+    {
+      "t": 20599,
+      "s": 800,
+      "x": 84.16666666666667,
+      "y": 47.1875
+    },
+    {
+      "t": 20661,
+      "s": 800,
+      "x": 83.88888888888889,
+      "y": 19.6875
+    },
+    {
+      "t": 21161,
+      "s": 800,
+      "x": 86.66666666666667,
+      "y": 76.40625
+    },
+    {
+      "t": 21461,
+      "s": 800,
+      "x": 63.61111111111111,
+      "y": 75.9375
+    },
+    {
+      "t": 21661,
+      "s": 800,
+      "x": 41.11111111111111,
+      "y": 75.3125
+    },
+    {
+      "t": 8312,
+      "s": 800,
+      "x": 90.27777777777779,
+      "y": 65.3125
+    },
+    {
+      "t": 8612,
+      "s": 800,
+      "x": 72.77777777777777,
+      "y": 65
+    },
+    {
+      "t": 22215,
+      "s": 800,
+      "x": 17.22222222222222,
+      "y": 76.09375
+    },
+    {
+      "t": 22215,
+      "s": 800,
+      "x": 17.5,
+      "y": 47.5
+    },
+    {
+      "t": 22515,
+      "s": 800,
+      "x": 34.166666666666664,
+      "y": 47.65625
+    },
+    {
+      "t": 23015,
+      "s": 800,
+      "x": 75.27777777777777,
+      "y": 47.1875
+    },
+    {
+      "t": 23015,
+      "s": 800,
+      "x": 75.83333333333333,
+      "y": 33.125
+    },
+    {
+      "t": 22565,
+      "s": 800,
+      "x": 54.72222222222223,
+      "y": 47.8125
+    },
+    {
+      "t": 23665,
+      "s": 800,
+      "x": 56.94444444444444,
+      "y": 32.65625
+    },
+    {
+      "t": 24065,
+      "s": 800,
+      "x": 35.55555555555556,
+      "y": 32.34375
+    },
+    {
+      "t": 24065,
+      "s": 800,
+      "x": 35.27777777777778,
+      "y": 45.9375
+    },
+    {
+      "t": 24365,
+      "s": 800,
+      "x": 8.61111111111111,
+      "y": 10.46875
+    },
+    {
+      "t": 24765,
+      "s": 800,
+      "x": 92.22222222222223,
+      "y": 87.8125
+    },
+    {
+      "t": 25565,
+      "s": 800,
+      "x": 93.61111111111111,
+      "y": 40.9375
+    },
+    {
+      "t": 25965,
+      "s": 800,
+      "x": 6.666666666666667,
+      "y": 41.875
+    },
+    {
+      "t": 26385,
+      "s": 800,
+      "x": 51.94444444444445,
+      "y": 41.5625
+    },
+    {
+      "t": 27010,
+      "s": 800,
+      "x": 51.11111111111111,
+      "y": 20.3125
+    },
+    {
+      "t": 27310,
+      "s": 800,
+      "x": 50.55555555555556,
+      "y": 71.25
+    },
+    {
+      "t": 27710,
+      "s": 800,
+      "x": 51.388888888888886,
+      "y": 45.625
+    },
+    {
+      "t": 28710,
+      "s": 800,
+      "x": 32.5,
+      "y": 20.625
+    },
+    {
+      "t": 28710,
+      "s": 800,
+      "x": 69.72222222222221,
+      "y": 20.9375
+    },
+    {
+      "t": 29110,
+      "s": 800,
+      "x": 33.05555555555556,
+      "y": 11.5625
+    },
+    {
+      "t": 29110,
+      "s": 800,
+      "x": 69.44444444444444,
+      "y": 12.1875
+    },
+    {
+      "t": 29810,
+      "s": 800,
+      "x": 30.833333333333336,
+      "y": 40
+    },
+    {
+      "t": 29810,
+      "s": 800,
+      "x": 68.88888888888889,
+      "y": 40.46875
+    },
+    {
+      "t": 30310,
+      "s": 800,
+      "x": 29.444444444444446,
+      "y": 64.53125
+    },
+    {
+      "t": 30310,
+      "s": 800,
+      "x": 68.33333333333333,
+      "y": 64.84375
+    },
+    {
+      "t": 30610,
+      "s": 800,
+      "x": 30.555555555555557,
+      "y": 28.125
+    },
+    {
+      "t": 30910,
+      "s": 800,
+      "x": 44.72222222222222,
+      "y": 18.59375
+    },
+    {
+      "t": 31310,
+      "s": 800,
+      "x": 61.111111111111114,
+      "y": 10
+    },
+    {
+      "t": 32010,
+      "s": 800,
+      "x": 80.83333333333333,
+      "y": 19.0625
+    },
+    {
+      "t": 32510,
+      "s": 800,
+      "x": 81.38888888888889,
+      "y": 85
+    },
+    {
+      "t": 32510,
+      "s": 800,
+      "x": 63.33333333333333,
+      "y": 84.84375
+    },
+    {
+      "t": 32910,
+      "s": 800,
+      "x": 36.388888888888886,
+      "y": 85.46875
+    },
+    {
+      "t": 32910,
+      "s": 800,
+      "x": 13.88888888888889,
+      "y": 84.84375
+    },
+    {
+      "t": 33553,
+      "s": 800,
+      "x": 14.722222222222223,
+      "y": 71.71875
+    },
+    {
+      "t": 33905,
+      "s": 800,
+      "x": 15.277777777777779,
+      "y": 60.15625
+    },
+    {
+      "t": 34435,
+      "s": 800,
+      "x": 16.666666666666664,
+      "y": 49.0625
+    },
+    {
+      "t": 34804,
+      "s": 800,
+      "x": 13.055555555555557,
+      "y": 34.53125
+    },
+    {
+      "t": 35204,
+      "s": 800,
+      "x": 14.444444444444443,
+      "y": 22.1875
+    },
+    {
+      "t": 36004,
+      "s": 800,
+      "x": 39.72222222222222,
+      "y": 19.84375
+    },
+    {
+      "t": 36204,
+      "s": 800,
+      "x": 73.33333333333333,
+      "y": 19.53125
+    },
+    {
+      "t": 37504,
+      "s": 800,
+      "x": 50.83333333333333,
+      "y": 50.31250000000001
+    },
+    {
+      "t": 38104,
+      "s": 800,
+      "x": 52.22222222222223,
+      "y": 10.78125
+    },
+    {
+      "t": 38704,
+      "s": 800,
+      "x": 49.72222222222222,
+      "y": 51.5625
+    },
+    {
+      "t": 39204,
+      "s": 800,
+      "x": 50.55555555555556,
+      "y": 91.5625
+    },
+    {
+      "t": 39804,
+      "s": 800,
+      "x": 91.11111111111111,
+      "y": 52.65625000000001
+    },
+    {
+      "t": 40304,
+      "s": 800,
+      "x": 90.27777777777779,
+      "y": 11.25
+    },
+    {
+      "t": 40804,
+      "s": 800,
+      "x": 10.833333333333334,
+      "y": 12.65625
+    },
+    {
+      "t": 41304,
+      "s": 800,
+      "x": 10.277777777777777,
+      "y": 54.53125
+    },
+    {
+      "t": 41904,
+      "s": 800,
+      "x": 30.555555555555557,
+      "y": 14.374999999999998
+    },
+    {
+      "t": 41904,
+      "s": 800,
+      "x": 73.33333333333333,
+      "y": 14.21875
+    }
+  ],
+  "timeChange": {
+    "8500": {
+      "pointcolor": "rgb(105,10,5)",
+      "bgcolor":"rgb(50,0,0)"
+    },
+    "9000": {
+      "pointcolor": "rgb(255,0,0)",
+      "bgcolor":"rgb(0,0,0)"
+    },
+    "9500": {
+      "bgcolor": "rgb(100,0,0)",
+      "pointcolor": "rgb(255,200,0)",
+      "textcolor": "rgb(255,200,0)",
+      "bgimage": "doom.png",
+      "imagefit": "fit"
+    }
+  }
+};
+
+let startTime;
+let isGameActive = false;
+let activePoints = [];
+let disabledPoints = [];
+let timer = null;
+let messages = [];
+let endLevel;
+let music = new Audio(map.music);
+let backgroundImg = new Image();
+backgroundImg.src = map.bgimage;
+
+runButton.addEventListener('click', function () {
+    startGame();
+    endLevel = calculateEndLevel();
+});
+
+var pointcolor="white";
+var bgcolor="black";
+var textcolor="white";
+var bgimage="";
+var imagefit="";
+        function startGame() {
+            modal.style.display = 'none';
+            document.querySelector('body').style.background=map.bgcolor
+            bgcolor=map.bgcolor
+            pointcolor=map.pointcolor
+            textcolor=map.textcolor
+            bgimage=map.bgimage
+            imagefit=map.imagefit
+            music.pause();
+            music.currentTime = 0;
+            music.play();
+            startTime = Date.now();
+            isGameActive = true;
+            activePoints = [];
+            disabledPoints = [];
+            timer = setInterval(update, 16);
+        }
+var oldimage=""
+function update() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const elapsedTime = Date.now() - startTime;
+    displayWinModal();
+
+    for (let time in map.timeChange) {
+        if (elapsedTime >= time) {
+            const change = map.timeChange[time];
+            if (change.bgcolor) bgcolor = change.bgcolor;
+            if (change.bgimage!==undefined){ bgimage = change.bgimage;}
+            if (change.pointcolor) pointcolor = change.pointcolor;
+            if (change.imagefit!==undefined) imagefit = change.imagefit;
+            if (change.textcolor) textcolor = change.textcolor;
+        }
+    }
+    
+    if(bgimage!==oldimage){
+      backgroundImg = new Image();
+      backgroundImg.src = bgimage;
+      oldimage = bgimage
+    }
+    document.querySelector('body').style.background = bgcolor;
+
+    // Ustaw tło
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Oblicz wymiary obrazu
+    let imgWidth = backgroundImg.width;
+    let imgHeight = backgroundImg.height;
+    let ratio = imgWidth / imgHeight;
+    let canvasRatio = canvas.width / canvas.height;
+
+if (backgroundImg && backgroundImg.complete && backgroundImg.naturalWidth !== 0) {
+    if (imagefit === "fit") {
+        // Obraz dopasowany do ekranu bez przycinania
+        if (canvasRatio > ratio) {
+            let newHeight = canvas.height;
+            let newWidth = newHeight * ratio;
+            ctx.drawImage(backgroundImg, (canvas.width - newWidth) / 2, 0, newWidth, newHeight);
+        } else {
+            let newWidth = canvas.width;
+            let newHeight = newWidth / ratio;
+            ctx.drawImage(backgroundImg, 0, (canvas.height - newHeight) / 2, newWidth, newHeight);
+        }
+    } else if (imagefit === "cover") {
+        // Obraz wypełniający ekran z przycięciem
+        if (canvasRatio > ratio) {
+            let newWidth = canvas.width;
+            let newHeight = newWidth / ratio;
+            ctx.drawImage(backgroundImg, 0, (canvas.height - newHeight) / 2, newWidth, newHeight);
+        } else {
+            let newHeight = canvas.height;
+            let newWidth = newHeight * ratio;
+            ctx.drawImage(backgroundImg, (canvas.width - newWidth) / 2, 0, newWidth, newHeight);
+        }
+    } else {
+        // Domyślne rozciągnięcie tła
+        ctx.drawImage(backgroundImg, 0, 0, canvas.width, canvas.height);
+    }
+} else {
+ 
+}
+
+    // Rysuj punkty
+    for (let point of map.points) {
+        if (point.t && elapsedTime >= point.t && !activePoints.includes(point) && !disabledPoints.includes(point)) {
+            activePoints.push(point);
+        }
+    }
+
+    // Rysuj punkty
+    for (let i = activePoints.length - 1; i >= 0; i--) {
+        const currentPoint = activePoints[i];
+        const timeLeft = currentPoint.t + currentPoint.s - elapsedTime;
+
+        if (disabledPoints.includes(currentPoint)) {
+            continue;
+        }
+
+        if (timeLeft <= 0) {
+            showMSG('No Reaction', (window.innerWidth / 2) - 50, 30);
+            endGame();
+            continue;
+        }
+
+        const radius = 15;
+        const outlineWidth = (timeLeft / currentPoint.s) * radius;
+        const opacity = (timeLeft > currentPoint.s / 2) ? 1 : (timeLeft / (currentPoint.s / 2));
+        ctx.globalAlpha = opacity;
+        ctx.fillStyle = pointcolor;
+        ctx.strokeStyle = pointcolor;
+
+        ctx.beginPath();
+        ctx.arc(canvas.width * (currentPoint.x / 100), canvas.height * (currentPoint.y / 100), radius + outlineWidth, 0, Math.PI * 2);
+        ctx.lineWidth = outlineWidth;
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(canvas.width * (currentPoint.x / 100), canvas.height * (currentPoint.y / 100), radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+    }
+
+    // Rysuj wiadomości
+    for (let i = messages.length - 1; i >= 0; i--) {
+        const msg = messages[i];
+        const timeElapsed = Date.now() - msg.startTime;
+        const opacity = Math.max(0, 1 - timeElapsed / 1000);
+        ctx.globalAlpha = opacity;
+        ctx.fillStyle = textcolor;
+        ctx.font = '30px Arial';
+        ctx.fillText(msg.text, msg.x, msg.y);
+        ctx.globalAlpha = 1;
+        if (opacity <= 0) {
+            messages.splice(i, 1);
+        }
+    }
+}
+
+
+        function calculateEndLevel() {
+            let maxT = Math.max(...map.points.map(point => point.t));
+            let pointWithMaxT = map.points.find(point => point.t === maxT);
+            return maxT + pointWithMaxT.s + 1000;
+        }
+
+        function endGame() {
+           clearInterval(timer);
+            isGameActive = false;
+            music.pause();
+            music.currentTime = 0;
+            music.play();
+            startGame();
+        }
+
+        function displayWinModal() {
+            const elapsedTime = Date.now() - startTime;
+            if (isGameActive && elapsedTime > endLevel) {
+                modalMessage.textContent = 'You win!';
+                modal.style.display = 'block';
+            }
+        }
+
+         
+
+        function showMSG(message, x, y) {
+            messages.push({ text: message, x, y, startTime: Date.now() });
+        }
+
+        canvas.addEventListener('click', (event) => {
+            let rmIndex = null;
+            for (let i = activePoints.length - 1; i >= 0; i--) {
+                const currentPoint = activePoints[i];
+                const x = canvas.width * (currentPoint.x / 100);
+                const y = canvas.height * (currentPoint.y / 100);
+                const radius = 30;
+                const distance = Math.sqrt((event.clientX - x) ** 2 + (event.clientY - y) ** 2);
+
+                if (distance <= radius) {
+                    const elapsedTime = Date.now() - startTime;
+                    const timeLeft = currentPoint.t + currentPoint.s - elapsedTime;
+
+                    if (timeLeft <= currentPoint.s / 4) {
+                        showMSG('Excellent', event.clientX, event.clientY);
+                        rmIndex = i;
+                    } else if (timeLeft <= currentPoint.s / 2) {
+                        showMSG('Great', event.clientX, event.clientY);
+                        rmIndex = i;
+                    }
+                }
+            }
+
+            if (rmIndex !== null) {
+                disabledPoints.push(activePoints[rmIndex]);
+                activePoints.splice(rmIndex, 1);
+                return;
+            }
+            showMSG('Miss', event.clientX, event.clientY);
+            endGame();
+        });
+
+        modal.style.display = 'block';
+    </script>
+</body>
+</html>
+ 
+    <style>
+        #kys {
+            position: fixed; z-index: 9999; width:100vw; top:0;left:0;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: black; /* Czarny ekran */
+            color: white; /* Kolor tekstu */
+            font-family: Arial, sans-serif;
+            text-align: center;
+            z-index: 9999; background:#272727;
+        }
+        @media (orientation: landscape) {
+            #kys {
+                display: none; /* Ukryj treść w trybie krajobrazowym */
+            }
+        }
+    </style>
+</head>
+<div id="kys">
+ 
+        <h1>Rotate Device</h1>
+
+</div>
+ 
