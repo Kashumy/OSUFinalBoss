@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html onclick="setTimeout(function (){document.querySelector('html').requestFullscreen()},1000);">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Osu final boss</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000000;
+        }
+        #gameCanvas {
+            display: block;
+            height: 100vh;
+            width: 100vw;
+        }
+        #modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 20px;
+            color: rgba(248, 248, 248, 1);
+            background: rgba(75, 72, 72, 1);
+            border-radius: 0px;
+            text-align: center;
+            z-index: 1000;
+        }
+        #modal h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        #modal button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background: rgba(116, 115, 115, 1);
+            color: rgba(255, 255, 255, 1);
+            border: none;
+            outline: none;
+        }
+        #mapSelection {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 20px;
+            color: rgba(248, 248, 248, 1);
+            background: rgba(75, 72, 72, 1);
+            border-radius: 0px;width: 70vw; height:70vh;overflow: hidden scroll;
+            text-align: center;
+            z-index: 1000;
+        }
+        #mapSelection button {
+            margin: 5px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background: rgba(116, 115, 115, 1);
+            color: rgba(255, 255, 255, 1);
+            border: none;
+            outline: none;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="modal">
+        <h1 id="modalMessage">Start Level</h1>
+        <button id="chooseMapButton">Choose Map</button>
+    </div>
+
+    <div id="mapSelection">
+        <h1>Select a Map</h1>
+        <div id="mapButtons"></div>
+        <button id="backToMenuButton">Back to Menu</button>
+        <button id="loadButton">import map</button>
+    </div>
+<script>
+    var maps = {};
+</script>
+<script src="/defaultmap.js"></script>
+    <script>
+
+ var style = document.createElement('style');
+ style.type = 'text/css';
+ style.innerHTML = `#infotoast {
+    position: fixed;
+    bottom: 20px;
+    left: 50% ;
+    transform: translateX( -50% );
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 3px;
+    border-radius: 8px;
+    display: none; 
+    font-size:10px;
+    z-index: 99999999999999999999;
+    transition: opacity 0.5 s ease,
+    bottom 0.5 s ease;
+}`;
+document.head.appendChild(style);
+       
+function TextPopUp(text) {
+    let toast = document.createElement('div');
+    toast.id = 'infotoast';
+    toast.innerText = text;
+    document.body.appendChild(toast);
+    toast.style.display = 'block';
+    toast.style.opacity = '1';
+    toast.style.bottom = '20px';
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.bottom = '50px';
+        setTimeout(() => {
+            document.body.removeChild(toast);
+        }, 500); 
+    }, 3000);
+}
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const modal = document.getElementById('modal');
+const mapSelection = document.getElementById('mapSelection');
+const chooseMapButton = document.getElementById('chooseMapButton');
+const backToMenuButton = document.getElementById('backToMenuButton');
+const mapButtonsDiv = document.getElementById('mapButtons');
+var chosedLevel = null;
+
+ 
+ 
+  
+document.getElementById('loadButton').addEventListener('click', () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = (event) => {
+        const file = event.target.files[0];
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const loadedMap = JSON.parse(e.target.result);
+                const keys = Object.keys(loadedMap); 
+                if (keys.length > 0) { 
+                    const firstKey = keys[0]; 
+                    maps[firstKey] = loadedMap[firstKey]; 
+                    showMapSelection();
+                    alert(firstKey)
+                } else {
+                    alert('Wczytywanie nie powiodło się: plik JSON nie zawiera żadnych kluczy');
+                }
+            } catch (error) {
+                alert('Wczytywanie nie powiodło się: ' + error.message);
+            }
+        };
+        reader.readAsText(file);
+    };
+    input.click();
+    
+});
+
+
+modal.style.display = 'block';
+ 
+var chosedLevel=null
+
+
+let startTime;
+let isGameActive = false;
+let activePoints = [];
+let disabledPoints = [];
+let timer = null;
+let messages = [];
+let endLevel;
+let music = new Audio();
+let backgroundImg = new Image();
+var firsttime1=0
+chooseMapButton.addEventListener('click', function() {
+    modal.style.display = 'none';
+    showMapSelection();
+    modalMessage.textContent = 'Select map!';
+    if(firsttime1==0){
+    setTimeout(function() {
+    TextPopUp("swipe your finger from the left corner to the right to open the menu or ..");
+    setTimeout(function() {
+        TextPopUp(".. click a space bar");
+    }, 4000)
+    firsttime1++
+}, 1000)
+}
+});
+
+backToMenuButton.addEventListener('click', function() {
+    isGameActive = false;
+    modal.style.display = 'block';
+    mapSelection.style.display = 'none';
+});
+
+function showMapSelection() {
+    mapButtonsDiv.innerHTML = ''; 
+    for (let map in maps) {
+        let button = document.createElement('button');
+        button.textContent = map;
+        button.addEventListener('click', () => {
+            chosedLevel = map;
+            once=0
+            startGame();
+        });
+        let deleteButton = document.createElement('button');
+        deleteButton.textContent = 'X'; 
+        deleteButton.style.backgroundColor = 'red';  
+        deleteButton.style.color = 'white'; 
+        deleteButton.style.border = 'none';  
+        deleteButton.style.padding = '5px 10px';  
+        deleteButton.style.cursor = 'pointer'; 
+        deleteButton.addEventListener('click', () => {
+            if (confirm('Czy na pewno chcesz usunąć mapę: ' + map + '?')) {
+                delete maps[map]; 
+                showMapSelection();  
+            }
+        });
+        button.appendChild(deleteButton);
+        mapButtonsDiv.appendChild(button);
+    }
+    mapSelection.style.display = 'block';
+}
+
+
+var pointcolor="white";
+var bgcolor="black";
+var textcolor="white";
+var bgimage="";
+var imagefit="";
+let once=0
+        function startGame() {
+            
+    if (chosedLevel !== null) {
+        modal.style.display = 'none';
+        mapSelection.style.display = 'none';
+        mapSelection.style.display = 'none';
+        document.querySelector('body').style.background = maps[chosedLevel].bgcolor;
+            bgcolor=maps[chosedLevel].bgcolor
+            pointcolor=maps[chosedLevel].pointcolor
+            textcolor=maps[chosedLevel].textcolor
+            indexBALL=0;
+            if(once==0){
+            bgimage=maps[chosedLevel].assets [maps[chosedLevel].bgimage]
+            imagefit=maps[chosedLevel].imagefit
+            music.src =maps[chosedLevel].assets [maps[chosedLevel].music]
+            }
+            once=1
+            music.pause();
+            music.currentTime = 0;
+            music.play();
+            startTime = Date.now();
+            isGameActive = true;
+            
+            activePoints = [];
+            disabledPoints = [];
+            endLevel=calculateEndLevel()
+            timer = setInterval(update, 16);
+        }}
+var oldimage=""
+var indexBALL=0;
+var faterDelay=0
+function update() {
+    if(chosedLevel!==null){
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const elapsedTime = Date.now() - startTime;
+    displayWinModal();
+
+    for (let time in maps[chosedLevel].timeChange) {
+        if (elapsedTime >= time) {
+            const change = maps[chosedLevel].timeChange[time];
+            if (change.bgcolor) bgcolor = change.bgcolor;
+            if (change.bgimage!==undefined){ bgimage=maps[chosedLevel].assets[change.bgimage]}
+            if (change.pointcolor) pointcolor = change.pointcolor;
+            if (change.imagefit!==undefined) imagefit = change.imagefit;
+            if (change.textcolor) textcolor = change.textcolor;
+        }
+    }
+    
+    if(bgimage!==oldimage){
+      backgroundImg = new Image();
+      backgroundImg.src = bgimage;
+      oldimage = bgimage
+    }
+    document.querySelector('body').style.background = bgcolor;
+
+    // Ustaw tło
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Oblicz wymiary obrazu
+    let imgWidth = backgroundImg.width;
+let imgHeight = backgroundImg.height;
+let ratio = imgWidth / imgHeight;
+let canvasRatio = canvas.width / canvas.height;
+
+if (backgroundImg && backgroundImg.complete && backgroundImg.naturalWidth !== 0) {
+    if (imagefit === "fit") {
+        // Obraz dopasowany do ekranu bez przycinania
+        if (canvasRatio > ratio) {
+            let newHeight = canvas.height;
+            let newWidth = newHeight * ratio;
+            ctx.drawImage(backgroundImg, (canvas.width - newWidth) / 2, 0, newWidth, newHeight);
+        } else {
+            let newWidth = canvas.width;
+            let newHeight = newWidth / ratio;
+            ctx.drawImage(backgroundImg, 0, (canvas.height - newHeight) / 2, newWidth, newHeight);
+        }
+    } else if (imagefit === "cover") {
+        // Obraz wypełniający ekran z przycięciem
+        if (canvasRatio > ratio) {
+            let newWidth = canvas.width;
+            let newHeight = newWidth / ratio;
+            ctx.drawImage(backgroundImg, 0, (canvas.height - newHeight) / 2, newWidth, newHeight);
+        } else {
+            let newHeight = canvas.height;
+            let newWidth = newHeight * ratio;
+            ctx.drawImage(backgroundImg, (canvas.width - newWidth) / 2, 0, newWidth, newHeight);
+        }
+    } else if (imagefit === "fitHeight") {
+        // Obraz dopasowany do wysokości ekranu
+        let newHeight = canvas.height;
+        let newWidth = newHeight * ratio;
+        ctx.drawImage(backgroundImg, (canvas.width - newWidth) / 2, 0, newWidth, newHeight);
+    } else if (imagefit === "fitWidth") {
+        // Obraz dopasowany do szerokości ekranu
+        let newWidth = canvas.width;
+        let newHeight = newWidth / ratio;
+        ctx.drawImage(backgroundImg, 0, (canvas.height - newHeight) / 2, newWidth, newHeight);
+    } else {
+        // Domyślne rozciągnięcie tła
+        ctx.drawImage(backgroundImg, 0, 0, canvas.width, canvas.height);
+    }
+} else {
+    // Obsługa błędów lub sytuacji, gdy obraz nie jest dostępny
+}
+
+    // Rysuj punkty
+    for (let point of maps[chosedLevel].points) {
+        if (point.t-faterDelay && elapsedTime >= point.t-faterDelay && !activePoints.includes(point) && !disabledPoints.includes(point)) {
+            indexBALL++;
+            point.text=indexBALL;
+            point.t=point.t-faterDelay
+            activePoints.push(point);
+            point.t=point.t+faterDelay
+        }
+    }
+
+    // Rysuj punkty
+    for (let i = activePoints.length - 1; i >= 0; i--) {
+        const currentPoint = activePoints[i];
+        const timeLeft = currentPoint.t + currentPoint.s - elapsedTime;
+
+        if (disabledPoints.includes(currentPoint)) {
+            continue;
+        }
+
+        if (timeLeft <= 0) {
+            showMSG('No Reaction', (window.innerWidth / 2) - 50, 30);
+            endGame();
+            continue;
+        }
+      var timespeedup=1
+        const radius = 24;
+        const outlineWidth = (timeLeft / (currentPoint.s/timespeedup) ) * 7;
+        const opacity = (timeLeft > (currentPoint.s/timespeedup)/ 2) ? 1 : (timeLeft / (currentPoint.s / 2));
+        ctx.globalAlpha = 0.5;
+        if(timeLeft <= currentPoint.s / 2.5){
+            ctx.globalAlpha = 0.8;
+        }
+        ctx.fillStyle = pointcolor;
+        ctx.strokeStyle = pointcolor;
+
+        ctx.beginPath();
+        ctx.arc(canvas.width * (currentPoint.x / 100), canvas.height * (currentPoint.y / 100), radius + outlineWidth*4, 0, Math.PI * 2);
+        ctx.lineWidth = 7;
+        ctx.stroke();
+ctx.globalAlpha = 1;
+        ctx.beginPath();
+        ctx.arc(canvas.width * (currentPoint.x / 100), canvas.height * (currentPoint.y / 100), radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        
+        ctx.font = '20px Arial';
+    const textColor = (parseInt(pointcolor.slice(4, 7)) > 200 && parseInt(pointcolor.slice(8, 11)) > 200 && parseInt(pointcolor.slice(12, 15)) > 200) ? 'black' : 'white';
+    ctx.fillStyle = textColor;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(currentPoint.text, canvas.width * (currentPoint.x / 100), canvas.height * (currentPoint.y / 100));
+
+    }
+
+    // Rysuj wiadomości
+    for (let i = messages.length - 1; i >= 0; i--) {
+        const msg = messages[i];
+        const timeElapsed = Date.now() - msg.startTime;
+        const opacity = Math.max(0, 1 - timeElapsed / 1000);
+        ctx.globalAlpha = opacity;
+        ctx.fillStyle = pointcolor;
+        ctx.font = '30px Arial';
+        ctx.fillText(msg.text, msg.x, msg.y);
+        ctx.globalAlpha = 1;
+        if (opacity <= 0) {
+            messages.splice(i, 1);
+        }
+    }
+}}
+
+
+        function calculateEndLevel() {
+            if(chosedLevel!==null){
+            let maxT = Math.max(...maps[chosedLevel].points.map(point => point.t));
+            let pointWithMaxT = maps[chosedLevel].points.find(point => point.t === maxT);
+            return maxT + pointWithMaxT.s + 1000;
+            }
+        }
+
+        function endGame() {
+           clearInterval(timer);
+            isGameActive = false;
+            music.pause();
+            music.currentTime = 0;
+            
+        //    music.play();
+            startGame();
+        }
+
+        function displayWinModal() {
+            const elapsedTime = Date.now() - startTime;
+            if (isGameActive && elapsedTime > endLevel) {
+                modalMessage.textContent = 'You win!';
+                modal.style.display = 'block';
+            }
+        }
+
+         
+
+        function showMSG(message, x, y) {
+            messages.push({ text: message, x, y, startTime: Date.now() });
+        }
+
+        canvas.addEventListener('click', (event) => {
+            let rmIndex = null;
+            for (let i = activePoints.length - 1; i >= 0; i--) {
+                const currentPoint = activePoints[i];
+                const x = canvas.width * (currentPoint.x / 100);
+                const y = canvas.height * (currentPoint.y / 100);
+                const radius = 30;
+                const distance = Math.sqrt((event.clientX - x) ** 2 + (event.clientY - y) ** 2);
+
+                if (distance <= radius) {
+                    const elapsedTime = Date.now() - startTime;
+                    const timeLeft = currentPoint.t + currentPoint.s - elapsedTime;
+
+                    if (timeLeft <= currentPoint.s / 2.5) {
+                        showMSG('', event.clientX, event.clientY);
+                        rmIndex = i;
+                    } else if (timeLeft <= currentPoint.s / 2) {
+                    /*    showMSG('Great', event.clientX, event.clientY);
+                        rmIndex = i;*/
+                    }
+                }
+            }
+
+            if (rmIndex !== null) {
+                disabledPoints.push(activePoints[rmIndex]);
+                activePoints.splice(rmIndex, 1);
+                return;
+            }
+            showMSG('x', event.clientX, event.clientY);
+ 
+            endGame();
+            
+        });
+
+        modal.style.display = 'block';
+    </script>
+</body>
+</html>
+ 
+    <style>
+        #kys {
+            position: fixed; z-index: 9999; width:100vw; top:0;left:0;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: black; /* Czarny ekran */
+            color: white; /* Kolor tekstu */
+            font-family: Arial, sans-serif;
+            text-align: center;
+            z-index: 9999; background:#272727;
+        }
+        @media (orientation: landscape) {
+            #kys {
+                display: none; /* Ukryj treść w trybie krajobrazowym */
+            }
+        }
+    </style>
+</head>
+<div id="kys">
+ 
+        <h1>Rotate Device</h1>
+
+</div>
+ 
+
+<style>
+        #menu {
+            position: fixed;
+            top: 0;
+            left: -300px; 
+            width: 250px;
+            height: 100%;
+            background-color: #333;
+            color: white;
+            z-index: 99999;
+            transition: left 0.3s;
+            padding: 20px;
+        }
+        #menu.open {
+            left: 0; 
+        }
+        #toggleButton {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background-color: #444;
+            color: white;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+        }
+        .hidden{
+            display:none;
+        }
+    </style>
+<div id="menu">
+ <h2 style="margin-left:calc(50% - 100px);">Game About clicking</h2>
+ <pre style="white-space: pre-wrap">
+OSU! remake 
+ </pre>
+ <button style="margin-left:calc(40% - 50px); width:150px; height:25px" onclick="backtomainmenu()">back to menu</button>
+ <button style="margin-left:calc(40% - 50px); width:150px; height:25px" onclick="leveleditor()">level editor</button>
+</div>
+
+<script>
+    const menu = document.getElementById('menu');
+    let startX;
+    let isDragging = false;
+    function backtomainmenu(){
+        chosedLevel=null
+        menu.classList.remove('open');
+opened = 1
+        clearInterval(timer);
+isGameActive = false;
+music.pause();
+        isGameActive = false;
+        modal.style.display = 'block';
+        mapSelection.style.display = 'none';
+    }
+function leveleditor(){
+    document.getElementById("editor").classList.toggle('hidden');
+    chosedLevel = null
+clearInterval(timer);
+isGameActive = false;
+music.pause();
+isGameActive = false;
+ 
+}
+    document.addEventListener('touchstart', (e) => {
+        startX = e.touches[0].clientX; //  
+        if(opened==1){
+        if (startX < 20) {
+            isDragging = true;
+        } else {
+            isDragging = false;
+        }
+        }else{
+            isDragging = true;
+        }
+    });
+var opened=0
+    document.addEventListener('touchmove', (e) => {
+        if (!isDragging) return; 
+        const currentX = e.touches[0].clientX;
+        const deltaX = currentX - startX;
+        if (deltaX > 50) { 
+            menu.classList.add('open');
+            opened=0
+        } else if (deltaX < -20) { 
+            menu.classList.remove('open');
+            opened=1
+        }
+    });
+document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') {
+        menu.classList.toggle('open');
+    }
+});
+    document.addEventListener('touchend', () => {
+        isDragging = false; // ;;
+    });
+    
+</script>
+
+
+
+ 
+<div  id="editor" class="hidden">
+ 
+    <style>
+        #editor {
+            position: absolute; z-index: 999999;
+            top:0; left:0; width:100vw; height:100vh;
+            margin: 0;
+            overflow: hidden;
+            background-color: #000;
+            color: white;
+             
+        }
+        #editor button{
+            background:#E9E9E9;
+            padding:5px;
+        }
+        #canvas2 {
+            display: block;
+            height: 100vh;
+            width: 100vw;
+             
+            position: absolute; z-index: -1; top: 0;
+        }
+        #controls {
+            margin: 20px;
+            zoom: 0.5; 
+        }
+        #timeDisplay {
+            font-size: 24px;
+        }
+        #loadButton, #exportButton, #playButton, #runButton {
+            margin: 5px;
+        }
+        #editorMenu {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 5px;
+            display:none;
+            height: 70vh; overflow: hidden scroll;
+            margin-bottom: 20px;
+        }
+        .timeChangeItem {
+            display: flex;
+            align-items: center;
+            margin-top: 5px;
+        }
+        .timeChangeItem button {
+            margin-left: 5px;
+        }
+    </style>
+ 
+    <canvas id="canvas2"></canvas>
+    <div id="controls">
+        <input type="range" id="timeSlider" min="-50" max="50" step="1" value="0">
+        <button id="exportButton">export map</button>
+        <button id="loadButton2">load Map</button>
+        <button id="playButton">Play</button>
+        <button onclick="currentTime=0; timeDisplay.textContent = `Czas: ${currentTime} ms`; drawPoints()">back to start</button>
+        <button id="runButton" onclick="toggleMenu()">menu</button>
+        <div id="timeDisplay">Czas: 0 ms</div>
+    </div>
+
+<!-- W sekcji 'editorMenu' -->
+<div id="editorMenu">
+    <h3>Edytor Ustawień</h3>
+    
+    <label>Music:
+        <select id="musicSelect" onchange="updateMusicFromSelect()">
+            <option value="" disabled selected>choose music from assets</option>
+        </select>
+ 
+ 
+    </label>
+ <label>Point length:
+<input type="number" min="500" max="10000" value="800" id="SpeedInput">
+</label>
+    <label>Default bg color on start:
+        <input type="color" id="defaultBgColor" value="#010300" onchange="updateBackgroundColor()" />
+    </label>
+   <label>Default point color:
+ <input type="color" id="defaultPointColor" value="#A1F0F0" onchange="updatePointColor()" />
+    </label>
+    <label>Default bg image on start:
+        <select id="bgImageSelect" onchange="updateBackgroundImageFromSelect()">
+            <option value="" disabled selected>chose img</option>
+        </select>
+ 
+    </label>
+    <div id="assetsContainer">
+    <h3>Loaded Assety</h3>
+    <div id="assetsList"></div>
+addasset    <input type="file" id="assetFile" />
+assetname  <input type="text" id="nameasset" value="asset">
+<button onclick="addNewAsset( document.getElementById('nameasset').value )" >add asset</button>
+</div>
+
+    <div id="timeChangeContainer">
+        <h4>TimeChange</h4>
+        <textarea id="timechange" style="font-size: 10px;" cols="40" rows="15"></textarea>
+    </div>
+<br>
+    Actions
+<pre>
+TimeChanger Configuration JSON CODE SYNTAX
+    "msfromstart":{
+"bgcolor":"rgb(0,0,0)",
+"pointcolor":"rgb...",
+"bgimage":"asset",
+"imagefit": "fit" / "stretch" / "cover" / "fitHeight" / "fitWidth" 
+    }
+</pre>
+<button onclick="leveleditor()"> close editor </button>
+<button onclick="testLevel()"> Test Level </button>
+
+<br>
+<br>
+<br>
+<br>
+<br>
+
+Danger
+<button onclick="map.points=[]"> remove MAP Points</button>
+</div>
+
+    <audio id="music" preload="auto"></audio>
+
+    <script>
+    function testLevel(){
+document.getElementById("editor").classList.toggle('hidden');
+maps["testLEVEL"]=map
+chosedLevel = "testLEVEL"
+clearInterval(timer);
+isGameActive = false;
+music.pause();
+isGameActive = false;
+showMapSelection()
+TextPopUp("open testLEVEL")
+    }
+        const canvas2 = document.getElementById('canvas2');
+        const ctx2 = canvas2.getContext('2d');
+        const timeSlider = document.getElementById('timeSlider');
+        const timeDisplay = document.getElementById('timeDisplay');
+        const music2 = document.getElementById('music');
+        const timeChangeContainer = document.getElementById('timeChangeContainer');
+        const playButton = document.getElementById('playButton');
+
+var map = {
+     assets:{
+         "1":"doom.mp3",
+         "2":"doom.png",
+         "3":"doom1.png"
+     },
+    music: "1", 
+    pointcolor: "rgb(255,0,0)",
+    textcolor: "red",
+    bgcolor: "rgb(1,3,0,1)",
+    bgimage: "3",
+    imagefit: "fit",
+    points: [
+        { t: 500, s: 800, x: 10, y: 50, text: 1 },],
+    timeChange: {
+        "8500": { pointcolor: "rgb(105,0,0)" },
+        "9000": { pointcolor: "rgb(255,0,0)" },
+        "9500": {
+            bgcolor: "rgb(100,0,0)",
+            pointcolor: "rgb(255,200,0)",
+            
+            bgimage: "2",
+            imagefit: "fit",
+        }
+    }
+}
+
+function updateAssetsList() {
+    const assetsList = document.getElementById('assetsList');
+    assetsList.innerHTML = ''; // Wyczyść listę
+
+    for (const [key, value] of Object.entries(map.assets)) {
+        const assetItem = document.createElement('div');
+        assetItem.textContent = key;
+        
+        const removeButton = document.createElement('button');
+        removeButton.textContent = 'X';
+        removeButton.onclick = () => {
+            removeAsset(key);
+        };
+        
+        assetItem.appendChild(removeButton);
+        assetsList.appendChild(assetItem);
+    }
+    updateAssetSelect(document.getElementById('musicSelect'), map.assets);
+updateAssetSelect(document.getElementById('bgImageSelect'), map.assets);
+}
+ updateAssetsList()
+function removeAsset(assetName) {
+    if (map.assets[assetName]) {
+        delete map.assets[assetName];
+        updateAssetSelect(document.getElementById('musicSelect'), map.assets);
+        updateAssetSelect(document.getElementById('bgImageSelect'), map.assets);
+        updateAssetsList(); // Aktualizuj listę assetów
+        alert(`Usunięto asset: ${assetName}`);
+    }
+}
+
+        function toggleMenu() {
+            const menu = document.getElementById('editorMenu');
+            menu.style.display = (menu.style.display === 'none' || menu.style.display === '') ? 'block' : 'none';
+        }
+
+        function updateMusic() {
+             
+                    music2.src = map.assets[map.music]; 
+ 
+        }
+
+        function updateBackgroundColor() {
+            const color = document.getElementById('defaultBgColor').value;
+            const color2 = document.getElementById('defaultPointColor').value;
+            map.pointcolor = color2;
+            map.bgcolor = color;
+            document.getElementById("editor").style.backgroundColor = color; // Ustawienie tła
+        }
+function updatePointColor() {
+     
+    const color2 = document.getElementById('defaultPointColor').value;
+    map.pointcolor = color2;
+      
+}
+        function updateBackgroundImage() {
+            const bgImageFile = document.getElementById('bgImage').files[0];
+            if (bgImageFile) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    map.bgimage = event.target.result; // Ustawienie jako Base64
+                    canvas2.style.backgroundImage = `url(${map.bgimage})`; // Ustawienie tła na kanwie
+                    canvas2.style.backgroundSize = map.imagefit; // Dopasowanie obrazu
+                };
+                reader.readAsDataURL(bgImageFile); // Przeczytaj jako Base64
+            }
+        }
+
+function addNewAsset(type) {
+    const fileInput = document.getElementById('assetFile') 
+    const assets = map.assets;
+
+    if (fileInput.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const assetName = document.getElementById('nameasset').value;
+            assets[assetName] = event.target.result; // Ustawienie jako Base64
+            updateAssetSelect(assetSelect, assets);
+            updateAssetsList(); // Aktualizuj listę assetów
+        };
+        reader.readAsDataURL(fileInput.files[0]);
+    }
+    updateAssetsList();
+}
+
+
+ 
+
+function updateAssetSelect(selectElement, assets) {
+    selectElement.innerHTML = '<option value="" disabled selected>Wybierz asset</option>';
+    for (const [key, value] of Object.entries(assets)) {
+        selectElement.innerHTML += `<option value="${key}">${key}</option>`;
+    }
+}
+
+// Funkcja aktualizująca muzykę z selecta
+function updateMusicFromSelect() {
+    const musicSelect = document.getElementById('musicSelect');
+    const selectedAsset = musicSelect.value;
+    if (selectedAsset) {
+        map.music = selectedAsset; // Ustawienie źródła audio
+    }
+}
+
+// Funkcja aktualizująca obrazek tła z selecta
+function updateBackgroundImageFromSelect() {
+    const bgImageSelect = document.getElementById('bgImageSelect');
+    const selectedAsset = bgImageSelect.value;
+    if (selectedAsset) {
+        canvas2.style.backgroundImage = `url(${map.assets[selectedAsset]})`; // Ustawienie tła na kanwie
+    }
+}
+ 
+// Eksport mapy
+document.getElementById('exportButton').addEventListener('click', () => {
+    const userKey = prompt("Wprowadź klucz do eksportu:", "defaultKey"); // Poproś użytkownika o wprowadzenie klucza
+    map.timeChange=JSON.parse(document.getElementById('timechange').value)
+    if (userKey) { // Sprawdź, czy użytkownik coś wpisał
+        const exportMap = {
+            [userKey]: map // Użyj wprowadzonego klucza
+        };
+        const mapString = JSON.stringify(exportMap, null, 2);
+        const blob = new Blob([mapString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${userKey}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+});
+
+// Inicjalizuj selecty z assetami na starcie
+updateAssetSelect(document.getElementById('musicSelect'), map.assets);
+updateAssetSelect(document.getElementById('bgImageSelect'), map.assets);
+ 
+document.getElementById('loadButton2').addEventListener('click', () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = (event) => {
+        const file = event.target.files[0];
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const loadedMap = JSON.parse(e.target.result);
+                const keys = Object.keys(loadedMap); // Pobierz klucze z załadowanego obiektu
+                if (keys.length > 0) { // Sprawdź, czy istnieje przynajmniej jeden klucz
+                    const firstKey = keys[0]; // Wybierz pierwszy klucz
+                    map = loadedMap[firstKey]; // Użyj pierwszego klucza
+                    document.getElementById("timechange").value = JSON.stringify(map.timeChange, null, 2);
+                    drawPoints();
+                    const bgImageSelect = document.getElementById('bgImageSelect');
+                    bgImageSelect.value=map.bgimage
+                    updateBackgroundImageFromSelect()
+                    document.getElementById('defaultBgColor').value=map.bgcolor
+                     document.getElementById('defaultPointColor').value=map.pointcolor;
+ 
+                    updateBackgroundColor()
+                    updateAssetsList()
+                } else {
+                    alert('Wczytywanie nie powiodło się: plik JSON nie zawiera żadnych kluczy');
+                }
+            } catch (error) {
+                alert('Wczytywanie nie powiodło się: ' + error.message);
+            }
+        };
+        reader.readAsText(file);
+    };
+    input.click();
+    updateAssetsList();
+});
+
+document.getElementById('defaultPointColor').value=map.pointcolor;
+
+ 
+        function toggleMenu() {
+            const menu = document.getElementById('editorMenu');
+            menu.style.display = (menu.style.display === 'none' || menu.style.display === '') ? 'block' : 'none';
+        }
+document.getElementById("timechange").value = JSON.stringify(map.timeChange, null, 2);
+         
+
+        function updateBackgroundFit() {
+            const fit = document.getElementById('bgFit').value;
+            map.imagefit = fit;
+            // Możesz dodać dodatkową logikę aby ustawić sposób dopasowania obrazka
+        }
+
+
+        let timeChanges = {};
+        let currentTime = 0; 
+        let isPlaying = false;
+        let playInterval;
+
+        const pointLifetime = 800; 
+        const pointRadius = 15; 
+        const removableTimeRange = 100;
+
+        function drawPoints() {
+            canvas2.width = window.innerWidth;
+            canvas2.height = window.innerHeight;
+            ctx2.clearRect(0, 0, canvas2.width, canvas2.height);
+ 
+     
+            for (let point of map.points) {
+                const x = canvas2.width * (point.x / 100);
+                const y = canvas2.height * (point.y / 100);
+                if (currentTime >= point.t && currentTime <= point.t + pointLifetime) {
+                    const remainingTime = point.t + pointLifetime - currentTime;
+                    const alpha = Math.max(0, remainingTime / pointLifetime);
+                    ctx2.globalAlpha=alpha
+                    ctx2.fillStyle = map.pointcolor;
+                    ctx2.beginPath();
+                    ctx2.arc(x, y, pointRadius, 0, Math.PI * 2);
+                    ctx2.fill();
+                    ctx2.globalAlpha=1
+                }
+            }
+        }
+
+        function updateTime() {
+            currentTime += parseInt(timeSlider.value);
+            if (currentTime < 0) {
+                currentTime = 0;
+            }
+            timeDisplay.textContent = `Czas: ${currentTime} ms`;
+            timeSlider.value = 0; 
+            drawPoints();
+        }
+function removePoint(x, y) {
+    map.points = map.points.filter(point => {
+        const pointX = canvas2.width * (point.x / 100);
+        const pointY = canvas2.height * (point.y / 100);
+        const isPointClicked = Math.sqrt((x - pointX) ** 2 + (y - pointY) ** 2) <= pointRadius;
+        const isRemovable = (currentTime - point.t) <= removableTimeRange;
+        return !(isPointClicked && isRemovable);
+    });
+    drawPoints();
+}
+
+function addPoint(mouseX, mouseY) {
+    if(parseInt(document.getElementById('SpeedInput').value)>550 && parseInt(document.getElementById('SpeedInput').value)<10000){
+    const newPoint = {
+        t: currentTime,
+        s: parseInt(document.getElementById('SpeedInput').value) ,
+        x: (mouseX / canvas2.width) * 100,
+        y: (mouseY / canvas2.height) * 100,
+    };
+    map.points.push(newPoint);
+    drawPoints();
+    }else{
+        TextPopUp("speed input cant be lower than 550 and bigger than 10000")
+    }
+}
+
+canvas2.addEventListener('click', (event) => {
+    const rect = canvas2.getBoundingClientRect();
+    const mouseX = event.clientX - rect.left;
+    const mouseY = event.clientY - rect.top;
+
+    let clickedOnPoint = false;
+    for (let point of map.points) {
+        const pointX = canvas2.width * (point.x / 100);
+        const pointY = canvas2.height * (point.y / 100);
+        if ((Math.sqrt((mouseX - pointX) ** 2 + (mouseY - pointY) ** 2) <= pointRadius) && (currentTime - point.t) <= removableTimeRange) {
+            clickedOnPoint = true;
+            removePoint(mouseX, mouseY);
+            break;
+        }
+    }
+
+    if (!clickedOnPoint) {
+        addPoint(mouseX, mouseY);
+    }
+});
+        timeSlider.addEventListener('input', updateTime);
+
+ 
+if (map.music in map.assets ) {
+    document.getElementById('musicSelect').value = map.music;
+}
+        function runContinue() {
+            music2.src=map.music
+            if (isPlaying) {
+                clearInterval(playInterval);
+                music2.pause();
+                playButton.textContent = 'Play';
+            } else {
+                music2.currentTime = currentTime / 1000;
+                music2.play();
+                playButton.textContent = 'Pause';
+
+                playInterval = setInterval(() => {
+                    currentTime += 100; 
+                    timeDisplay.textContent = `Czas: ${currentTime} ms`;
+                    drawPoints();
+
+                    if (currentTime >= music2.duration * 1000) {
+                        clearInterval(playInterval);
+                        music2.pause();
+                        playButton.textContent = 'Play';
+                        isPlaying = false;
+                    }
+                }, 100);
+            }
+            isPlaying = !isPlaying;
+        }
+
+        playButton.addEventListener('click', () => {
+            music2.src=map.assets[map.music]
+            if (isPlaying) {
+                clearInterval(playInterval);
+                music2.pause();
+                playButton.textContent = 'Play';
+            } else {
+            //    currentTime = 0; 
+                music2.currentTime = currentTime; 
+                music2.play();
+                music2.currentTime = currentTime/1000;
+                playButton.textContent = 'Pause';
+
+                playInterval = setInterval(() => {
+                    currentTime += 100; 
+                    timeDisplay.textContent = `Czas: ${currentTime} ms`;
+                    drawPoints();
+
+                    if (currentTime >= music2.duration * 1000) {
+                        clearInterval(playInterval);
+                        music2.pause();
+                        playButton.textContent = 'Play';
+                        isPlaying = false;
+                    }
+                }, 100);
+            }
+            isPlaying = !isPlaying;
+        });
+
+         
+
+        function updateTimeChangesDisplay() {
+            timeChangeContainer.innerHTML = ''; // Clear existing items
+            for (const time in timeChanges) {
+                const item = document.createElement('div');
+                item.className = 'timeChangeItem';
+                item.innerHTML = `Czas: ${time} ms, Efekt: ${JSON.stringify(timeChanges[time])}`;
+                const removeButton = document.createElement('button');
+                removeButton.textContent = 'X';
+                removeButton.onclick = () => {
+                    delete timeChanges[time];
+                    updateTimeChangesDisplay();
+                };
+                item.appendChild(removeButton);
+                timeChangeContainer.appendChild(item);
+            }
+        }
+
+        drawPoints(); // Początkowe rysowanie punktów
+    </script>
+ 
+</div>
